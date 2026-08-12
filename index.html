@@ -344,6 +344,7 @@ function buildWheel(){
       selectedDay = d;
       buildWheel();
       renderCard();
+      saveSelectedDay(d);
     });
     wheel.appendChild(path);
 
@@ -435,18 +436,45 @@ function dayFromStart(startDateStr){
   return cycleDay;
 }
 
+async function saveSelectedDay(day){
+  try{
+    await window.storage.set('cycle-selected-day', String(day), false);
+  }catch(e){
+    // non-fatal — selection just won't persist this time
+  }
+}
+
 async function loadStart(){
+  let hasSavedSelection = false;
+
   try{
     const res = await window.storage.get('cycle-start-date', false);
     if(res && res.value){
       document.getElementById('startDate').value = res.value;
       todayDay = dayFromStart(res.value);
-      selectedDay = todayDay;
       document.getElementById('todayPill').textContent = `Today is cycle day ${todayDay}`;
     }
   }catch(e){
-    // no saved date yet
+    // no saved start date yet
   }
+
+  try{
+    const savedDay = await window.storage.get('cycle-selected-day', false);
+    if(savedDay && savedDay.value){
+      const n = parseInt(savedDay.value, 10);
+      if(n >= 1 && n <= 28){
+        selectedDay = n;
+        hasSavedSelection = true;
+      }
+    }
+  }catch(e){
+    // no saved selection yet
+  }
+
+  if(!hasSavedSelection && todayDay){
+    selectedDay = todayDay;
+  }
+
   buildWheel();
   renderCard();
 }
@@ -461,6 +489,7 @@ document.getElementById('saveDate').addEventListener('click', async () => {
     document.getElementById('todayPill').textContent = `Today is cycle day ${todayDay}`;
     buildWheel();
     renderCard();
+    saveSelectedDay(selectedDay);
   }catch(e){
     document.getElementById('todayPill').textContent = 'Could not save — try again';
   }
