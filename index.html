@@ -436,6 +436,23 @@ function dayFromStart(startDateStr){
   return cycleDay;
 }
 
+// Rolls a stored start date forward by whole 28-day cycles so it always
+// reflects the CURRENT cycle's start, not the very first one ever entered.
+function currentCycleStart(startDateStr){
+  const start = new Date(startDateStr + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const diffDays = Math.floor((today - start) / (1000*60*60*24));
+  const completedCycles = Math.floor(diffDays / 28);
+  if(completedCycles <= 0) return startDateStr;
+  const rolled = new Date(start);
+  rolled.setDate(rolled.getDate() + completedCycles * 28);
+  const y = rolled.getFullYear();
+  const m = String(rolled.getMonth()+1).padStart(2,'0');
+  const d = String(rolled.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
 async function saveSelectedDay(day){
   try{
     await window.storage.set('cycle-selected-day', String(day), false);
@@ -450,9 +467,16 @@ async function loadStart(){
   try{
     const res = await window.storage.get('cycle-start-date', false);
     if(res && res.value){
-      document.getElementById('startDate').value = res.value;
-      todayDay = dayFromStart(res.value);
+      const rolledStart = currentCycleStart(res.value);
+      document.getElementById('startDate').value = rolledStart;
+      todayDay = dayFromStart(rolledStart);
       document.getElementById('todayPill').textContent = `Today is cycle day ${todayDay}`;
+
+      if(rolledStart !== res.value){
+        // A full cycle (or more) has passed since the stored start date —
+        // advance the saved start date so it always reflects the current cycle.
+        try{ await window.storage.set('cycle-start-date', rolledStart, false); }catch(e){}
+      }
     }
   }catch(e){
     // no saved start date yet
@@ -484,7 +508,12 @@ document.getElementById('saveDate').addEventListener('click', async () => {
   if(!val) return;
   try{
     await window.storage.set('cycle-start-date', val, false);
-    todayDay = dayFromStart(val);
+    const rolledStart = currentCycleStart(val);
+    if(rolledStart !== val){
+      document.getElementById('startDate').value = rolledStart;
+      await window.storage.set('cycle-start-date', rolledStart, false);
+    }
+    todayDay = dayFromStart(rolledStart);
     selectedDay = todayDay;
     document.getElementById('todayPill').textContent = `Today is cycle day ${todayDay}`;
     buildWheel();
