@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cycle Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#241626;
+    --surface:#341f39;
+    --surface-2:#3d2442;
+    --cream:#f6ecdf;
+    --cream-dim:#cdbdc9;
+    --crimson:#c65a72;
+    --moss:#93a865;
+    --amber:#e8a852;
+    --plum:#a184c2;
+    --line:rgba(246,236,223,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--cream);
+    font-family:'Work Sans', sans-serif;
+    padding:32px 18px 60px;
+  }
+  .wrap{max-width:640px; margin:0 auto;}
+
+  header{text-align:center; margin-bottom:28px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--cream-dim);
+    margin-bottom:8px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:32px;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    color:var(--cream-dim);
+    font-size:14px;
+    margin:0;
+  }
+
+  /* date setup bar */
+  .setup{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:24px 0 8px;
+    font-size:13px;
+    color:var(--cream-dim);
+  }
+  .setup input[type="date"]{
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--cream);
+    font-family:'Work Sans', sans-serif;
+    font-size:13px;
+    padding:7px 10px;
+    border-radius:8px;
+  }
+  .setup button{
+    background:var(--amber);
+    color:#241626;
+    border:none;
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    padding:8px 14px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .setup button:hover{filter:brightness(1.08);}
+  .today-pill{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--amber);
+    min-height:14px;
+  }
+
+  /* wheel */
+  .wheel-stage{
+    display:flex;
+    justify-content:center;
+    margin:18px 0 10px;
+  }
+  svg{ overflow:visible; }
+  .day-seg{ cursor:pointer; transition:opacity .15s ease; }
+  .day-seg:hover{ opacity:0.75; }
+  .day-seg.selected{ stroke:var(--cream); stroke-width:2; }
+  .today-marker{ pointer-events:none; }
+  .center-label{ font-family:'Fraunces', serif; }
+  .center-day{ font-family:'IBM Plex Mono', monospace; }
+
+  /* legend */
+  .legend{
+    display:flex;
+    justify-content:center;
+    gap:16px;
+    flex-wrap:wrap;
+    margin:6px 0 30px;
+    font-size:12px;
+    color:var(--cream-dim);
+  }
+  .legend span{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+  /* phase card */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:26px 24px;
+    animation:fade .35s ease;
+  }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .card-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:4px;
+  }
+  .phase-name{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:26px;
+  }
+  .phase-days{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--cream-dim);
+  }
+  .phase-nickname{
+    font-size:13px;
+    color:var(--cream-dim);
+    margin-bottom:14px;
+  }
+  .phase-desc{
+    font-size:15px;
+    line-height:1.6;
+    margin-bottom:22px;
+  }
+
+  .dodont{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  @media (max-width:480px){
+    .dodont{grid-template-columns:1fr;}
+  }
+  .col{
+    background:var(--surface-2);
+    border-radius:12px;
+    padding:16px 16px 14px;
+  }
+  .col-title{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .col.do .col-title{color:var(--moss);}
+  .col.dont .col-title{color:var(--crimson);}
+  .col ul{margin:0; padding:0; list-style:none;}
+  .col li{
+    font-size:13.5px;
+    line-height:1.5;
+    padding-left:18px;
+    position:relative;
+    margin-bottom:9px;
+  }
+  .col li:last-child{margin-bottom:0;}
+  .col li:before{
+    position:absolute; left:0; top:0;
+  }
+  .col.do li:before{ content:"✓"; color:var(--moss); }
+  .col.dont li:before{ content:"✕"; color:var(--crimson); }
+
+  footer{
+    text-align:center;
+    color:var(--cream-dim);
+    font-size:11.5px;
+    margin-top:26px;
+    line-height:1.6;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Day by day</div>
+    <h1>Cycle Companion</h1>
+    <p>Tap any day on the ring. Standard 28-day cycle — yours may run shorter or longer.</p>
+  </header>
+
+  <div class="setup">
+    <label for="startDate">First day of last period:</label>
+    <input type="date" id="startDate">
+    <button id="saveDate">Save</button>
+    <span class="today-pill" id="todayPill"></span>
+  </div>
+
+  <div class="wheel-stage">
+    <svg id="wheel" width="320" height="320" viewBox="0 0 320 320"></svg>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot" style="background:#c65a72"></i>Menstrual</span>
+    <span><i class="dot" style="background:#93a865"></i>Follicular</span>
+    <span><i class="dot" style="background:#e8a852"></i>Ovulation</span>
+    <span><i class="dot" style="background:#a184c2"></i>Luteal</span>
+  </div>
+
+  <div class="card" id="card"></div>
+
+  <footer>Educational, generalized guide — not medical advice. Real cycles vary in length and symptoms; if something feels off, a doctor beats a wheel.</footer>
+</div>
+
+<script>
+const PHASES = [
+  {
+    key:'menstrual', range:[1,5], nickname:'Bear Cave Mode', color:'#c65a72',
+    desc:"Energy's in the basement, the couch has never looked better, and hormones are at rock bottom. Expect quiet, cozy, low-tolerance-for-nonsense energy. This is hibernation, not a personality change.",
+    dos:[
+      "Stock chocolate, painkillers, and her go-to snack — no questions asked",
+      "Offer the heating pad before she has to ask",
+      "Take over chores without turning it into a performance",
+      "Let plans get cancelled, guilt-free"
+    ],
+    donts:[
+      "Never ask \"are you PMS-ing\" — especially not now",
+      "Don't book the big hike or loud party this week",
+      "Don't take short answers personally",
+      "Don't comment on snack quantities"
+    ]
+  },
+  {
+    key:'follicular', range:[6,13], nickname:'Main Character Rising', color:'#93a865',
+    desc:"Estrogen's climbing, energy's back, and she's suddenly booking gym classes and reorganizing the pantry. This is the comeback arc — optimism, new ideas, and the urge to start seventeen projects at once.",
+    dos:[
+      "Say yes to spontaneous plans — she's got the energy",
+      "Bring new date ideas; adventurous mood incoming",
+      "Support the sudden burst of ambition, pantry included",
+      "Match her energy when she wants to move"
+    ],
+    donts:[
+      "Don't schedule anything low-key when she wants adventure",
+      "Don't be shocked by a sudden new hobby obsession",
+      "Don't be precious if three of those projects fizzle by Friday"
+    ]
+  },
+  {
+    key:'ovulation', range:[14,16], nickname:'Peak Glow', color:'#e8a852',
+    desc:"This is the main event: confidence up, charisma on, biology doing its whole attract-a-mate routine whether either of you asked for it. She may feel unusually social, magnetic, and sure of herself.",
+    dos:[
+      "Plan the date night or big conversation — confidence is high",
+      "Compliment her; she'll actually believe you this week",
+      "Lean into romance and intimacy if she's initiating",
+      "Bring your best listening — great week for deep talks"
+    ],
+    donts:[
+      "Don't get weird or insecure if she's turning heads out in the world",
+      "Don't schedule anything that needs her to sit still and stay quiet",
+      "Don't disappear into your phone during the good conversations"
+    ]
+  },
+  {
+    key:'luteal', range:[17,28], nickname:'The Feral Countdown', color:'#a184c2',
+    desc:"The glow fades, patience thins, and PMS shows up uninvited somewhere around day 24. Cravings intensify and plans start to feel like a lot. Comfort wins over conversation here.",
+    dos:[
+      "Keep snacks stocked — carbs and salt are not up for debate",
+      "Give her space when asked, no hurt feelings",
+      "Handle logistics so she isn't the one thinking about dinner",
+      "Validate the feeling even if the trigger seems small"
+    ],
+    donts:[
+      "Never say \"you're just hormonal\" — a certified relationship-ending sentence",
+      "Don't pick this week for the Big Difficult Conversation",
+      "Don't take the moodiness personally — and don't vanish either"
+    ]
+  }
+];
+
+function phaseForDay(day){
+  return PHASES.find(p => day >= p.range[0] && day <= p.range[1]);
+}
+
+const svgNS = "http://www.w3.org/2000/svg";
+const wheel = document.getElementById('wheel');
+const cx=160, cy=160, rOuter=140, rInner=88;
+let selectedDay = 1;
+let todayDay = null;
+
+function polar(r, angleDeg){
+  const a = (angleDeg - 90) * Math.PI/180;
+  return [cx + r*Math.cos(a), cy + r*Math.sin(a)];
+}
+
+function segPath(dayIndex){
+  const anglePerDay = 360/28;
+  const gap = 1.1; // small gap between segments in degrees
+  const a0 = dayIndex*anglePerDay + gap/2;
+  const a1 = (dayIndex+1)*anglePerDay - gap/2;
+  const [x0o,y0o] = polar(rOuter, a0);
+  const [x1o,y1o] = polar(rOuter, a1);
+  const [x1i,y1i] = polar(rInner, a1);
+  const [x0i,y0i] = polar(rInner, a0);
+  const large = (a1-a0) > 180 ? 1 : 0;
+  return `M ${x0o} ${y0o} A ${rOuter} ${rOuter} 0 ${large} 1 ${x1o} ${y1o} L ${x1i} ${y1i} A ${rInner} ${rInner} 0 ${large} 0 ${x0i} ${y0i} Z`;
+}
+
+function buildWheel(){
+  wheel.innerHTML = '';
+  for(let d=1; d<=28; d++){
+    const p = phaseForDay(d);
+    const path = document.createElementNS(svgNS,'path');
+    path.setAttribute('d', segPath(d-1));
+    path.setAttribute('fill', p.color);
+    path.setAttribute('fill-opacity', d===selectedDay ? '1' : '0.55');
+    path.setAttribute('class', 'day-seg' + (d===selectedDay ? ' selected' : ''));
+    path.dataset.day = d;
+    path.addEventListener('click', () => {
+      selectedDay = d;
+      buildWheel();
+      renderCard();
+    });
+    wheel.appendChild(path);
+
+    // day number, sparse (every day but small)
+    const midAngle = (d-1)*(360/28) + (360/28)/2;
+    const [tx,ty] = polar((rOuter+rInner)/2, midAngle);
+    const text = document.createElementNS(svgNS,'text');
+    text.setAttribute('x', tx);
+    text.setAttribute('y', ty);
+    text.setAttribute('text-anchor','middle');
+    text.setAttribute('dominant-baseline','middle');
+    text.setAttribute('font-size','9');
+    text.setAttribute('font-family',"IBM Plex Mono, monospace");
+    text.setAttribute('fill', d===selectedDay ? '#241626' : 'rgba(36,22,38,0.55)');
+    text.textContent = d;
+    text.style.pointerEvents = 'none';
+    wheel.appendChild(text);
+  }
+
+  // today marker ring
+  if(todayDay){
+    const midAngle = (todayDay-1)*(360/28) + (360/28)/2;
+    const [mx,my] = polar(rOuter+12, midAngle);
+    const marker = document.createElementNS(svgNS,'circle');
+    marker.setAttribute('cx', mx);
+    marker.setAttribute('cy', my);
+    marker.setAttribute('r', 4.5);
+    marker.setAttribute('fill', '#f6ecdf');
+    marker.setAttribute('class','today-marker');
+    wheel.appendChild(marker);
+  }
+
+  // center label
+  const p = phaseForDay(selectedDay);
+  const c1 = document.createElementNS(svgNS,'circle');
+  c1.setAttribute('cx',cx); c1.setAttribute('cy',cy); c1.setAttribute('r', rInner-6);
+  c1.setAttribute('fill', '#241626');
+  wheel.insertBefore(c1, wheel.firstChild);
+
+  const lbl1 = document.createElementNS(svgNS,'text');
+  lbl1.setAttribute('x', cx); lbl1.setAttribute('y', cy-6);
+  lbl1.setAttribute('text-anchor','middle');
+  lbl1.setAttribute('class','center-day');
+  lbl1.setAttribute('font-size','11');
+  lbl1.setAttribute('fill','#cdbdc9');
+  lbl1.textContent = `DAY ${selectedDay}`;
+  wheel.appendChild(lbl1);
+
+  const lbl2 = document.createElementNS(svgNS,'text');
+  lbl2.setAttribute('x', cx); lbl2.setAttribute('y', cy+18);
+  lbl2.setAttribute('text-anchor','middle');
+  lbl2.setAttribute('class','center-label');
+  lbl2.setAttribute('font-size','15');
+  lbl2.setAttribute('font-style','italic');
+  lbl2.setAttribute('fill','#f6ecdf');
+  lbl2.textContent = p.nickname;
+  wheel.appendChild(lbl2);
+}
+
+function renderCard(){
+  const p = phaseForDay(selectedDay);
+  const card = document.getElementById('card');
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="phase-name" style="color:${p.color}">${p.key[0].toUpperCase()+p.key.slice(1)}</div>
+      <div class="phase-days">Days ${p.range[0]}–${p.range[1]}</div>
+    </div>
+    <div class="phase-nickname">"${p.nickname}"</div>
+    <div class="phase-desc">${p.desc}</div>
+    <div class="dodont">
+      <div class="col do">
+        <div class="col-title">Partner: do</div>
+        <ul>${p.dos.map(x=>`<li>${x}</li>`).join('')}</ul>
+      </div>
+      <div class="col dont">
+        <div class="col-title">Partner: don't</div>
+        <ul>${p.donts.map(x=>`<li>${x}</li>`).join('')}</ul>
+      </div>
+    </div>
+  `;
+}
+
+function dayFromStart(startDateStr){
+  const start = new Date(startDateStr + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const diffDays = Math.floor((today - start) / (1000*60*60*24));
+  const cycleDay = ((diffDays % 28) + 28) % 28 + 1;
+  return cycleDay;
+}
+
+async function loadStart(){
+  try{
+    const res = await window.storage.get('cycle-start-date', false);
+    if(res && res.value){
+      document.getElementById('startDate').value = res.value;
+      todayDay = dayFromStart(res.value);
+      selectedDay = todayDay;
+      document.getElementById('todayPill').textContent = `Today is cycle day ${todayDay}`;
+    }
+  }catch(e){
+    // no saved date yet
+  }
+  buildWheel();
+  renderCard();
+}
+
+document.getElementById('saveDate').addEventListener('click', async () => {
+  const val = document.getElementById('startDate').value;
+  if(!val) return;
+  try{
+    await window.storage.set('cycle-start-date', val, false);
+    todayDay = dayFromStart(val);
+    selectedDay = todayDay;
+    document.getElementById('todayPill').textContent = `Today is cycle day ${todayDay}`;
+    buildWheel();
+    renderCard();
+  }catch(e){
+    document.getElementById('todayPill').textContent = 'Could not save — try again';
+  }
+});
+
+loadStart();
+</script>
+</body>
+</html>
