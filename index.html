@@ -453,29 +453,29 @@ function currentCycleStart(startDateStr){
   return `${y}-${m}-${d}`;
 }
 
-async function saveSelectedDay(day){
+function saveSelectedDay(day){
   try{
-    await window.storage.set('cycle-selected-day', String(day), false);
+    localStorage.setItem('cycle-selected-day', String(day));
   }catch(e){
     // non-fatal — selection just won't persist this time
   }
 }
 
-async function loadStart(){
+function loadStart(){
   let hasSavedSelection = false;
 
   try{
-    const res = await window.storage.get('cycle-start-date', false);
-    if(res && res.value){
-      const rolledStart = currentCycleStart(res.value);
+    const saved = localStorage.getItem('cycle-start-date');
+    if(saved){
+      const rolledStart = currentCycleStart(saved);
       document.getElementById('startDate').value = rolledStart;
       todayDay = dayFromStart(rolledStart);
       document.getElementById('todayPill').textContent = `Today is cycle day ${todayDay}`;
 
-      if(rolledStart !== res.value){
+      if(rolledStart !== saved){
         // A full cycle (or more) has passed since the stored start date —
         // advance the saved start date so it always reflects the current cycle.
-        try{ await window.storage.set('cycle-start-date', rolledStart, false); }catch(e){}
+        try{ localStorage.setItem('cycle-start-date', rolledStart); }catch(e){}
       }
     }
   }catch(e){
@@ -483,9 +483,9 @@ async function loadStart(){
   }
 
   try{
-    const savedDay = await window.storage.get('cycle-selected-day', false);
-    if(savedDay && savedDay.value){
-      const n = parseInt(savedDay.value, 10);
+    const savedDay = localStorage.getItem('cycle-selected-day');
+    if(savedDay){
+      const n = parseInt(savedDay, 10);
       if(n >= 1 && n <= 28){
         selectedDay = n;
         hasSavedSelection = true;
@@ -503,15 +503,15 @@ async function loadStart(){
   renderCard();
 }
 
-document.getElementById('saveDate').addEventListener('click', async () => {
+document.getElementById('saveDate').addEventListener('click', () => {
   const val = document.getElementById('startDate').value;
   if(!val) return;
   try{
-    await window.storage.set('cycle-start-date', val, false);
+    localStorage.setItem('cycle-start-date', val);
     const rolledStart = currentCycleStart(val);
     if(rolledStart !== val){
       document.getElementById('startDate').value = rolledStart;
-      await window.storage.set('cycle-start-date', rolledStart, false);
+      localStorage.setItem('cycle-start-date', rolledStart);
     }
     todayDay = dayFromStart(rolledStart);
     selectedDay = todayDay;
